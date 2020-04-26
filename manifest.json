@@ -1,0 +1,26 @@
+{
+  "name": "GitHub issue creator",
+  "version": "0.1",
+  "description": "Create GitHub issues from Steam Workshop comments",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://steamcommunity.com/sharedfiles/*"
+      ],
+      "js": [
+        "workshopItemScript.js"
+      ]
+    }
+  ],
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "storage"
+  ],
+  "web_accessible_resources": [
+    "github-inv.png"
+  ],
+  "manifest_version": 2
+}
