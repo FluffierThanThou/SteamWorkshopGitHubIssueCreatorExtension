@@ -9,6 +9,15 @@ document.getElementById("save_token_button").addEventListener("click", () => {
   });
 });
 
+document.getElementById("reset_repo_button").addEventListener("click", () => {
+  chrome.storage.sync.get(null, (val) => {
+    for (const key in val) {
+      if (val.hasOwnProperty(key) && !key.startsWith("github"))
+        chrome.storage.sync.set({ [key]: null });
+    }
+  })
+});
+
 chrome.storage.sync.get(["github_api_token", "github_user"], (val) => {
   token_field.value = val.github_api_token;
   user_field.value = val.github_user;
