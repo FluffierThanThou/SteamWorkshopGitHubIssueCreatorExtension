@@ -1,26 +1,19 @@
 {
-  "name": "GitHub issue creator",
+  "name": "Steam Workshop Toolbox",
   "version": "0.2",
   "description": "Create GitHub issues from Steam Workshop comments",
   "content_scripts": [
     {
-      "matches": [
-        "https://steamcommunity.com/sharedfiles/*"
-      ],
-      "js": [
-        "workshopItemScript.js"
-      ]
+      "matches": ["https://steamcommunity.com/sharedfiles/*"],
+      "js": ["vendor/toastify.js", "workshopItemScript.js"],
+      "css": ["vendor/toastify.css", "style.css"]
     }
   ],
   "icons": {
     "128": "icon-128.png"
   },
   "options_page": "options.html",
-  "permissions": [
-    "storage"
-  ],
-  "web_accessible_resources": [
-    "github-inv.png"
-  ],
+  "permissions": ["storage"],
+  "web_accessible_resources": ["github-inv.png"],
   "manifest_version": 2
 }

@@ -1,0 +1,10 @@
+.count-text {
+  text-align: right;
+  font-size: 70%;
+  color: grey;
+}
+
+.count-text.count-over {
+  font-weight: bold;
+  color: hsl(348, 86%, 61%);
+}
