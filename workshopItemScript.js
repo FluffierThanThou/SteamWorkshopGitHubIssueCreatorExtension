@@ -5,12 +5,17 @@ const commentContainer = document.getElementsByClassName(
 const observer = new MutationObserver(createButtons);
 observer.observe(commentContainer, { childList: true });
 
-// Fetch id for mod
-const publishedFileId = document
+const DEFAULT_TEXTAREA = document
+  .getElementsByClassName("commentthread_entry_quotebox")[0]
+  .getElementsByTagName("textarea")[0];
+
+const MOD_ID = document
   .getElementsByClassName("sectionTab")[0]
   .href.match(/(\d+)$/)[1];
 
-// create button on each comment
+const MAX_CHARACTERS = 1000;
+
+// create buttons on each comment
 function createButtons() {
   const messages = document.getElementsByClassName("commentthread_comment");
   for (const message of messages) {
@@ -20,25 +25,60 @@ function createButtons() {
     const text = message.getElementsByClassName(
       "commentthread_comment_text"
     )[0];
-    const button = document.createElement("a");
-    button.addEventListener("click", () =>
-      createIssue(
-        author.textContent.trim(),
-        text.innerHTML.trim().replace("<br>", "\n")
-      )
-    );
-    button.classList.add("actionlink");
-    button.setAttribute("data-tooltip-text", "Create Issue");
-    button.innerHTML = `<img src="${chrome.runtime.getURL(
-      "github-inv.png"
-    )}" />`;
 
-    message
-      .getElementsByClassName("commentthread_comment_actions")[0]
-      .insertAdjacentElement("afterbegin", button);
+    const actions = message.getElementsByClassName(
+      "commentthread_comment_actions"
+    )[0];
+    actions.insertAdjacentElement(
+      "afterbegin",
+      createIssueButton(author, text)
+    );
+    actions.insertAdjacentElement("afterbegin", createReplyButton(author));
   }
+
+  // re-create steam tooltips
+  bindTooltips();
 }
 createButtons();
+
+function bindTooltips() {
+  // we cannot execute page scripts directly, but we can insert a script element that does it for us.
+  // if it's this easy to circumvent, what is the point of sandboxing other than annoying devs?
+  const scriptNode = document.createElement("script");
+  const scriptBody = document.createTextNode(
+    "BindTooltips(document, { tooltipCSSClass: 'community_tooltip' });"
+  );
+  scriptNode.appendChild(scriptBody);
+  document.body.append(scriptNode);
+
+  // clean up after ourselves
+  setTimeout(() => {
+    scriptNode.remove();
+  }, 1000);
+}
+
+function createIssueButton(author, text) {
+  const button = document.createElement("a");
+  button.addEventListener("click", () =>
+    createIssue(
+      author.textContent.trim(),
+      text.innerHTML.trim().replace("<br>", "\n")
+    )
+  );
+  button.classList.add("actionlink");
+  button.setAttribute("data-tooltip-text", "Create Issue");
+  button.innerHTML = `<img src="${chrome.runtime.getURL("github-inv.png")}" />`;
+  return button;
+}
+
+function createReplyButton(author) {
+  const button = document.createElement("a");
+  button.addEventListener("click", () => reply(author.textContent.trim()));
+  button.classList.add("actionlink");
+  button.setAttribute("data-tooltip-text", "Reply");
+  button.innerHTML = `<img src="${chrome.runtime.getURL("reply.png")}" />`;
+  return button;
+}
 
 function toast(type, text, link = undefined) {
   let color;
@@ -68,9 +108,9 @@ function toast(type, text, link = undefined) {
 
 function createIssue(author, text) {
   chrome.storage.sync.get(
-    [publishedFileId, "github_api_token", "github_user"],
+    [MOD_ID, "github_api_token", "github_user"],
     (val) => {
-      let repo = val[publishedFileId];
+      let repo = val[MOD_ID];
       const owner = val.github_user;
       const token = val.github_api_token;
       let title = text.split("\n")[0];
@@ -78,8 +118,8 @@ function createIssue(author, text) {
 
       if (!repo) {
         repo = prompt("What is the repository for this mod?").trim();
-        chrome.storage.sync.set({ [publishedFileId]: repo }, () => {
-          toast("info", `Repo for ${publishedFileId} set to ${repo}`);
+        chrome.storage.sync.set({ [MOD_ID]: repo }, () => {
+          toast("info", `Repo for ${MOD_ID} set to ${repo}`);
         });
       }
 
@@ -100,6 +140,7 @@ function createIssue(author, text) {
           console.log({ res, body });
           if (res.ok) {
             toast("success", `issue created (#${body.number})`, body.html_url);
+            reply(author, `  [url=${body.html_url}]here[/url]`);
           } else {
             toast("error", `Error: ${res.statusText}`);
           }
@@ -112,7 +153,17 @@ function createIssue(author, text) {
   );
 }
 
-const MAX_CHARACTERS = 1000;
+/**
+ *
+ * @param {string} user
+ * @param {string} text
+ * @param {HTMLTextAreaElement} textarea
+ */
+function reply(user, text = "", textarea = DEFAULT_TEXTAREA) {
+  if (textarea.value && !textarea.value.endsWith("\n")) textarea.value += "\n";
+  textarea.value += `[b]@${user}:[/b] ${text}`;
+  textarea.focus();
+}
 
 /**
  *
@@ -136,8 +187,10 @@ function addCharacterCounter(entrybox) {
   }
 
   updateCount();
-  textarea.onchange = updateCount;
-  textarea.oninput = updateCount;
+  textarea.addEventListener("change", updateCount, false);
+  textarea.addEventListener("input", updateCount, false);
+  textarea.addEventListener("focus", updateCount, false);
+  textarea.addEventListener("blur", updateCount, false);
 }
 
 for (const entrybox of document.getElementsByClassName(

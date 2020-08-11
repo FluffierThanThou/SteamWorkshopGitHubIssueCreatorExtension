@@ -14,6 +14,6 @@
   },
   "options_page": "options.html",
   "permissions": ["storage"],
-  "web_accessible_resources": ["github-inv.png"],
+  "web_accessible_resources": ["github-inv.png", "reply.png"],
   "manifest_version": 2
 }
